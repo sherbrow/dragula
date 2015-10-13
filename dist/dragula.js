@@ -67,6 +67,7 @@ function dragula (initialContainers, options) {
   if (o.moves === void 0) { o.moves = always; }
   if (o.accepts === void 0) { o.accepts = always; }
   if (o.invalid === void 0) { o.invalid = invalidTarget; }
+  if (o.invalidChildren === void 0) { o.invalidChildren = true; }
   if (o.containers === void 0) { o.containers = initialContainers || []; }
   if (o.isContainer === void 0) { o.isContainer = never; }
   if (o.copy === void 0) { o.copy = false; }
@@ -194,11 +195,17 @@ function dragula (initialContainers, options) {
       return; // don't drag container itself
     }
     var handle = item;
+    var validItem;
     while (item.parentElement && isContainer(item.parentElement) === false) {
       if (o.invalid(item, handle)) {
+        if(!o.invalidChildren && validItem) { // if one has been validated already
+          item = validItem;
+          break;
+        }
         return;
       }
-      item = item.parentElement; // drag target should be a top element
+      validItem = item; // drag target should be a top-est element
+      item = item.parentElement; // keep the recursion going
       if (!item) {
         return;
       }
@@ -208,7 +215,12 @@ function dragula (initialContainers, options) {
       return;
     }
     if (o.invalid(item, handle)) {
-      return;
+      if(!o.invalidChildren && validItem) { // if one has been validated already
+        item = validItem;
+      }
+      else {
+        return;
+      }
     }
 
     var movable = o.moves(item, source, handle, nextEl(item));
